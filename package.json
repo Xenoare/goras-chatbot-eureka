@@ -1,0 +1,30 @@
+{
+  "name": "admin-bot-goras",
+  "version": "1.0.0",
+  "description": "Whatsapp Bot For Desa Goras Jaya",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.ts",
+    "build": "npx tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@types/express": "^4.17.21",
+    "@types/qr-image": "^3.2.9",
+    "@whiskeysockets/baileys": "^6.5.0",
+    "axios": "^1.6.5",
+    "express": "^4.18.2",
+    "nodemon": "^3.0.2",
+    "qr-image": "^3.2.0", 
+    "qrcode-terminal": "^0.12.0",
+    "ts-node": "^10.9.2"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "auth/*"
+    ]
+  } 
+}
