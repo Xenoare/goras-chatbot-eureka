@@ -15,4 +15,3 @@ app.listen(port, () => {
     initWhatsApp()
 })
 
-module.exports = app
