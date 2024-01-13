@@ -14,5 +14,4 @@ app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
     (0, whatsapp_1.initWhatsApp)();
 });
-
-module.exports = app
+module.exports = app;
