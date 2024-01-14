@@ -1,156 +1,162 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getStatus = exports.sendMessage = exports.initWhatsApp = void 0;
-const baileys_1 = __importStar(require("@whiskeysockets/baileys"));
-const qr_image_1 = __importDefault(require("qr-image"));
-const axios_1 = __importDefault(require("axios"));
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const session = new Map();
-const VAR = 'VAR_SESSION';
-let connectionStatus = 'Wait for checking connection';
+const express = require('express');
+const qr = require('qr-image');
+const { Boom } =require("@hapi/boom");
+const { MongoClient } = require('mongodb');
+const axios = require('axios');
+const makeWASocket = require("@whiskeysockets/baileys").default;
+const {
+    DisconnectReason,
+    useMultiFileAuthState,
+  } = require("@whiskeysockets/baileys");  
+const useMongoDBAuthState = require('./mongoAuthState');
+require('dotenv').config();
+
+const mongoURL = process.env.MONGO_URI
+const { Request, RequestHandler, Response } = express;
+const session = new Map()
+const VAR = 'VAR_SESSION'
+let connectionStatus  = 'Checking Connection'
 let qrCode;
-function handleFreshLogin() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const authStateFolder = path_1.default.join(__dirname, '../auth');
-            yield fs_1.default.promises.rmdir(authStateFolder, { recursive: true });
-        }
-        catch (error) {
-            console.error('Error deleting auth state folder:', error);
-            throw error; // Re-throw the error for further handling
-        }
-    });
+
+const initWhatsApp = async () => {
+    await connectToWhatsApp()
 }
-const initWhatsApp = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield connectToWhatsApp();
-});
-exports.initWhatsApp = initWhatsApp;
-const sendMessage = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, nik, whatsapp, gender, ttl, address, service } = req.body;
-    const confirmationMsg = `Terimakasih ${name} sebelumnya, permintaan layanan ${service} anda akan di proses secepatnya oleh petugas administrasi desa goras jaya`;
-    yield session.get(VAR).sendMessage(`${whatsapp}@s.whatsapp.net`, { text: confirmationMsg });
+
+const sendMessage = async (req, res) => {
+    const {name, nik, whatsapp, gender, ttl, address, service} = req.body
+
+    const confirmationMsg = `Terimakasih ${name} sebelumnya, permintaan layanan ${service} anda akan di proses secepatnya oleh petugas administrasi desa goras jaya`
+
+    await session.get(VAR).sendMessage(`${whatsapp}@s.whatsapp.net`, {text : confirmationMsg});
+
     res.json({
         success: true,
         data: `Halo ${name}, NIK ${nik}, No. ${whatsapp}`,
         messsage: 'Sukses'
-    });
-});
-exports.sendMessage = sendMessage;
-const getStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    if (qrCode == null || qrCode == undefined) {
-        res.json({
+    })
+
+}
+
+const getStatus = async (req, res) => {
+    if (qrCode == null || qrCode === undefined) {
+        res.json({ 
             success: true,
-            data: connectionStatus,
-            message: 'Success Menampilkan Status'
-        });
+            data : connectionStatus,
+            message: 'Connected'
+        })
+    } else {
+        let code = qr.image(qrCode, {type: 'png'})
+        res.setHeader('Content-Type', 'image/png')
+        code.pipe(res)
     }
-    else {
-        let code = qr_image_1.default.image(qrCode, { type: 'png' });
-        res.setHeader('Content-Type', 'image/png');
-        code.pipe(res);
-    }
-});
-exports.getStatus = getStatus;
-function connectToWhatsApp() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const { state, saveCreds } = yield (0, baileys_1.useMultiFileAuthState)('auth');
-        const sock = (0, baileys_1.default)({
-            // can provide additional config here
-            printQRInTerminal: true,
-            auth: state
-        });
-        sock.ev.on('creds.update', saveCreds);
-        sock.ev.on('connection.update', (update) => {
-            var _a, _b, _c, _d;
-            const { connection, lastDisconnect } = update;
-            if (update.qr) {
-                qrCode = update.qr;
+}
+
+async function connectToWhatsApp () {
+    const mongoClient = new MongoClient(mongoURL)
+
+    await mongoClient.connect()
+    const collection = mongoClient    
+    .db("whatsapp_api")
+    .collection("auth_info_baileys");
+
+    const { state, saveCreds } = await useMongoDBAuthState(collection)
+    const sock = makeWASocket({
+        // can provide additional config here
+        printQRInTerminal: true,
+        auth: state
+    })
+    sock.ev.on('creds.update', saveCreds)
+    sock.ev.on('connection.update', (update) => {
+        const { connection, lastDisconnect } = update
+
+        if (update.qr) {
+            qrCode = update.qr
+        }
+
+        if(connection === 'close') {
+            let reason = new Boom(lastDisconnect.error).output.statusCode;
+            if (reason === DisconnectReason.badSession) {
+                console.log(`Bad Session File, Please Delete ${session} and Scan Again`);
+                sock.logout();
+            } else if (reason === DisconnectReason.connectionClosed) {
+                console.log("Connection closed, reconnecting....");
+                connectToWhatsApp();
+            } else if (reason === DisconnectReason.connectionLost) {
+                console.log("Connection Lost from Server, reconnecting...");
+                connectToWhatsApp();
+            } else if (reason === DisconnectReason.connectionReplaced) {
+                console.log("Connection Replaced, Another New Session Opened, Please Close Current Session First");
+                sock.logout();
+            } else if (reason === DisconnectReason.loggedOut) {
+                console.log(`Device Logged Out, Please Delete ${session} and Scan Again.`);
+                sock.logout();
+            } else if (reason === DisconnectReason.restartRequired) {
+                console.log("Restart Required, Restarting...");
+                connectToWhatsApp();
+            } else if (reason === DisconnectReason.timedOut) {
+                console.log("Connection TimedOut, Reconnecting...");
+                connectToWhatsApp();
+            } else {
+                sock.end(`Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`);
             }
-            if (connection === 'close') {
-                let shouldReconnect = ((_b = (_a = lastDisconnect === null || lastDisconnect === void 0 ? void 0 : lastDisconnect.error) === null || _a === void 0 ? void 0 : _a.output) === null || _b === void 0 ? void 0 : _b.statusCode) !== baileys_1.DisconnectReason.loggedOut;
-                if (((_d = (_c = lastDisconnect === null || lastDisconnect === void 0 ? void 0 : lastDisconnect.error) === null || _c === void 0 ? void 0 : _c.output) === null || _d === void 0 ? void 0 : _d.statusCode) === 401) {
-                    handleFreshLogin();
-                    shouldReconnect = true;
-                }
-                console.log('connection closed due to ', lastDisconnect === null || lastDisconnect === void 0 ? void 0 : lastDisconnect.error, ', reconnecting ', shouldReconnect);
-                // reconnect if not logged out
-                connectionStatus = "Closed";
-                if (shouldReconnect) {
-                    connectToWhatsApp();
-                }
-            }
-            else if (connection === 'open') {
-                connectionStatus = "Connected";
-                console.log('opened connection');
-            }
-        });
-        sock.ev.on('messages.upsert', (m) => __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            const msg = m.messages[0];
-            console.log(JSON.stringify(m, undefined, 2));
-            if (!msg.key.fromMe && m.type === 'notify') {
-                console.log(JSON.stringify(m, undefined, 2));
-                if ((_a = msg.key.remoteJid) === null || _a === void 0 ? void 0 : _a.includes("@s.whatsapp.net")) {
-                    console.log(JSON.stringify(m, undefined, 2));
-                    if (msg.message) {
-                        if (msg.message.conversation === "cek status") {
-                            axios_1.default.get("https://script.google.com/macros/s/AKfycbxc4OdfsGRzWaerHooaJgLzgW5SSvNp4MR_2ycuUwgsTVIPygAvBYie9llZ2AHOBd778g/exec?whatsapp=" + msg.key.remoteJid.replace('@s.whatsapp.net', ''))
-                                .then((response) => __awaiter(this, void 0, void 0, function* () {
+            connectionStatus = "Closed"
+        } else if(connection === 'open') {
+        connectionStatus = "Connected"
+        console.log('opened connection')
+        }
+    })
+    sock.ev.on('messages.upsert', async (m) => {
+        const msg = m.messages[0]
+        console.log(JSON.stringify(m, undefined, 2))
+
+        if (!msg.key.fromMe && m.type === 'notify') {
+            console.log(JSON.stringify(m, undefined, 2))
+            if (msg.key.remoteJid?.includes("@s.whatsapp.net")) {
+                console.log(JSON.stringify(m, undefined, 2))
+                if (msg.message) {
+                    if (msg.message.conversation === "1" || msg.message.conversation === "1.") {
+                        let formMsg = "Silahkan isi terlebih dahulu Formulir permohonan Layanan Adminstrasi Mandiri\n https://forms.gle/RwhH1bdrmHGSsqxq5"
+                        await sock.sendMessage(msg.key.remoteJid, {text : formMsg })
+                    } else if (msg.message.conversation === "2" || msg.message.conversation === "2.") {
+                        axios.get("https://script.google.com/macros/s/AKfycbxc4OdfsGRzWaerHooaJgLzgW5SSvNp4MR_2ycuUwgsTVIPygAvBYie9llZ2AHOBd778g/exec?whatsapp="+msg.key.remoteJid.replace('@s.whatsapp.net',''))
+                            .then(async (response) => {
                                 console.log(response);
-                                const { success, data, message } = response.data;
+                                const {success, data, message} = response.data
                                 let str;
+                                console.log(data)
                                 if (success) {
-                                    str = `Halo ${data.nama_lengkap}}, permohonan anda tentang layanan ${data.jenis_layanan} akan segera di proses`;
-                                    yield sock.sendMessage(msg.key.remoteJid, { text: str });
+                                    for (const item of data) {
+                                        str = `Halo ${item.nama_lengkap}, permohonan anda tentang layanan ${item.jenis_layanan} akan segera di proses`
+                                        await sock.sendMessage(msg.key.remoteJid, {text : str })    
+                                    }
+                                } else {
+                                    str = 'Mohon sebelumnya, belum ada permohonan yang masuk atas nama Anda. Mungkin sebelumnya anda bisa melakukan terlebih dahulu pengisian Formulir permohonan Layanan Adminstrasi Mandiri\n https://forms.gle/RwhH1bdrmHGSsqxq5'
+                                    await sock.sendMessage(msg.key.remoteJid, {text : str })    
                                 }
-                            }));
-                        }
-                        else {
-                            yield sock.sendMessage(msg.key.remoteJid, { text: 'Selamat Datang di dalam Layanan Mandiri Kampung Goras Jaya\n Silahkan pilih layanan yang sesuai dengan kebutuhan anda' });
-                        }
+                            })
+                    } else if (msg.message.conversation === "3" || msg.message.conversation === "3.") {
+                        let infoMsg = "Kantor Kampung Goras Jaya berlokasi di Kecamatan Bekri, Lampung Tengah dan Jam Operasional Administrasi mulai dari jam 8:00 - 15:00"
+                        await sock.sendMessage(msg.key.remoteJid, { location: { degreesLatitude: -5.0927701414503606, degreesLongitude: 105.13306687717349 } })
+                        await sock.sendMessage(msg.key.remoteJid, {text : infoMsg })
+                    } else {
+                        let welcomeMsg = "Selamat Datang di Sistem Layanan Mandiri Kampung Goras Jaya. Silahkan ketik menu sesuai dengan layanan yang sesuai dengan anda\n1. Form Layanan Mandiri. \n2. Pengecekan Status Dokumen Anda. \n3. Informasi terkait Sistem Layanan Administrasi Kampung Goras Jaya"
+                        await sock.sendMessage(msg.key.remoteJid, {text : welcomeMsg })
                     }
+        
                 }
             }
-            console.log(JSON.stringify(m, undefined, 2));
-            // console.log('replying to', m.messages[0].key.remoteJid)
-            // await sock.sendMessage(m.messages[0].key.remoteJid!, { text: 'Hello there!' })
-        }));
-        session.set(VAR, sock);
-    });
+        }
+            console.log(JSON.stringify(m, undefined, 2))
+    
+
+    })
+
+    session.set(VAR, sock)
+
+}
+
+module.exports = {
+    initWhatsApp,
+    sendMessage,
+    getStatus
 }
