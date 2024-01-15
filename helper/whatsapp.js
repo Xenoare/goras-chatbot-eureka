@@ -72,9 +72,21 @@ const getStatus = async (req, res) => {
             message: 'Connected'
         })
     } else {
-        let code = qr.image(qrCode, { type: 'png' })
-        res.setHeader('Content-Type', 'image/png')
-        code.pipe(res)
+        const htmlContent = `
+            <html>
+                <head>
+                    <title>QR Code</title>
+                </head>
+                <body>
+                    <img src="data:image/png;base64,${qr.imageSync(qrCode, { type: 'png' }).toString('base64')}" alt="QR Code">
+                </body>
+            </html>
+        `;
+
+        // Set the content type to HTML
+        res.setHeader('Content-Type', 'text/html');
+        // Send the HTML content
+        res.send(htmlContent);
     }
 }
 
