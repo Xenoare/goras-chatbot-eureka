@@ -86,7 +86,7 @@ const getStatus = async (req, res) => {
         // Set the content type to HTML
         res.setHeader('Content-Type', 'text/html');
         // Send the HTML content
-        res.send(htmlContent);
+        res.status(200).send(htmlContent);
     }
 }
 
