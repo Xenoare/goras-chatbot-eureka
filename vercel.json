@@ -6,19 +6,13 @@
         "use": "@vercel/node"
       }
     ],
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "/"
-      }
-    ],
-    "headers": [
-      {
-        "source": "/",
-        "headers": [
-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-        ]
-      }
-    ]  
-  }
+  "routes": [
+    { "src": "/", "dest": "/index.js" },
+    { "src": "/send-message", "dest": "/index.js" },
+    { "src": "/.*", "dest": "/index.js" }
+  ],
+  "headers": [
+    { "source": "/.*", "headers": [{ "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }] }
+  ]
+}
   
