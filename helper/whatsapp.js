@@ -59,7 +59,15 @@ const sendMessage = async (req, res) => {
 
 const getStatus = async (req, res) => {
 
-    console.log('QR Code:', qrCode); 
+    if (qrCode == null || qrCode === undefined) {
+        res.json({ 
+            qr: qrCode,
+            success: true,
+            data : connectionStatus,
+            message: 'Connected'
+        })
+    } else {
+        console.log('QR Code:', qrCode); 
         const htmlContent = `
             <html>
                 <head>
@@ -75,6 +83,8 @@ const getStatus = async (req, res) => {
         res.setHeader('Content-Type', 'text/html');
         // Send the HTML content
         res.status(200).send(htmlContent);
+    }
+
 }
 
 async function connectToWhatsApp() {
