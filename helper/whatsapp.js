@@ -61,12 +61,10 @@ const sendMessage = async (req, res) => {
 }
 
 const getStatus = async (req, res) => {
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
 
     if (qrCode == null || qrCode === undefined) {
         res.json({ 
+            qr: qrCode,
             success: true,
             data : connectionStatus,
             message: 'Connected'
