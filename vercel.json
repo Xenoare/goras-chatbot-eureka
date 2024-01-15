@@ -1,18 +1,19 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "./index.js",
-        "use": "@vercel/node"
-      }
-    ],
+  "version": 2,
+  "builds": [
+    {
+      "src": "./index.js",
+      "use": "@vercel/node"
+    }
+  ],
   "routes": [
-    { "src": "/", "dest": "/index.js" },
-    { "src": "/send-message", "dest": "/index.js" },
-    { "src": "/.*", "dest": "/index.js" }
+      {
+        "src": "/(.*)",
+        "dest": "/"
+      }
   ],
   "headers": [
-    { "source": "/helper/whatsapp.js", "headers": [{ "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }] }
+      { "source": "/helper/whatsapp.js", "headers": [{ "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }] }
   ]
 }
   
