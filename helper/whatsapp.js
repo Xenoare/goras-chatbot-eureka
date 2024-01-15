@@ -1,4 +1,3 @@
-const express = require('express');
 const qr = require('qr-image');
 const { Boom } =require("@hapi/boom");
 const { MongoClient } = require('mongodb');
@@ -14,6 +13,7 @@ const mongoURL = process.env.MONGO_URI
 const session = new Map()
 const VAR = 'VAR_SESSION'
 let qrCode;
+let connectionStatus = "Checking Connection..."
 let mongoClient;
 
 const initWhatsApp = async () => {
