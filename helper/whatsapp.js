@@ -59,9 +59,8 @@ const sendMessage = async (req, res) => {
 
 const getStatus = async (req, res) => {
 
-    if (qrCode == null || qrCode === undefined) {
+    if (qrCode == null || qrCode == undefined) {
         res.json({ 
-            qr: qrCode,
             success: true,
             data : connectionStatus,
             message: 'Connected'

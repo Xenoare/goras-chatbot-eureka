@@ -8,7 +8,7 @@ const app = express()
 
 app.use(express.json())
 
-app.get("/scan", getStatus)
+app.get("/", getStatus)
 
 app.post("/send-message", sendMessage)
 
