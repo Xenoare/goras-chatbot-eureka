@@ -5,17 +5,14 @@ const { MongoClient } = require('mongodb');
 const axios = require('axios');
 const makeWASocket = require("@whiskeysockets/baileys").default;
 const {
-    DisconnectReason,
-    useMultiFileAuthState,
+    DisconnectReason
   } = require("@whiskeysockets/baileys");  
 const useMongoDBAuthState = require('./mongoAuthState');
 require('dotenv').config();
 
 const mongoURL = process.env.MONGO_URI
-const { Request, RequestHandler, Response } = express;
 const session = new Map()
 const VAR = 'VAR_SESSION'
-let connectionStatus  = 'Checking Connection'
 let qrCode;
 let mongoClient;
 
@@ -62,15 +59,7 @@ const sendMessage = async (req, res) => {
 
 const getStatus = async (req, res) => {
 
-    if (qrCode == null || qrCode === undefined) {
-        res.json({ 
-            qr: qrCode,
-            success: true,
-            data : connectionStatus,
-            message: 'Connected'
-        })
-    } else {
-        console.log('QR Code:', qrCode); 
+    console.log('QR Code:', qrCode); 
         const htmlContent = `
             <html>
                 <head>
@@ -86,7 +75,6 @@ const getStatus = async (req, res) => {
         res.setHeader('Content-Type', 'text/html');
         // Send the HTML content
         res.status(200).send(htmlContent);
-    }
 }
 
 async function connectToWhatsApp() {
@@ -140,9 +128,7 @@ async function connectToWhatsApp() {
                 } else {
                     sock.end(`Unknown DisconnectReason: ${reason}|${lastDisconnect.error}`);
                 }
-                connectionStatus = "Closed"
             } else if(connection === 'open') {
-            connectionStatus = "Connected"
             console.log('opened connection')
             }
         })
