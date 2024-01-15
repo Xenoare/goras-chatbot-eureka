@@ -72,6 +72,7 @@ const getStatus = async (req, res) => {
             message: 'Connected'
         })
     } else {
+        console.log('QR Code:', qrCode); 
         const htmlContent = `
             <html>
                 <head>

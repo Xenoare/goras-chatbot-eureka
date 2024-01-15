@@ -11,6 +11,12 @@
         "src": "/(.*)",
         "dest": "index.js"
       }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/(.*)", "headers": [{ "key": "Pragma", "value": "no-cache" }] },
+    { "source": "/(.*)", "headers": [{ "key": "Expires", "value": "0" }] }
   ]
+
 }
   
