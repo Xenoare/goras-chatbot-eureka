@@ -58,7 +58,7 @@ const sendMessage = async (req, res) => {
 }
 
 const getStatus = async (req, res) => {
-    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Cache-Control', 'max-age=60');    
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
 
