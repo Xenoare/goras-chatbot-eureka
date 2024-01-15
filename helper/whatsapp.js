@@ -12,10 +12,8 @@ const useMongoDBAuthState = require('./mongoAuthState');
 require('dotenv').config();
 
 const mongoURL = process.env.MONGO_URI
-const { Request, RequestHandler, Response } = express;
 const session = new Map()
 const VAR = 'VAR_SESSION'
-let connectionStatus  = 'Checking Connection'
 let qrCode;
 let mongoClient;
 
@@ -51,13 +49,6 @@ const sendMessage = async (req, res) => {
     const confirmationMsg = `Terimakasih ${name} sebelumnya, permintaan layanan ${service} anda akan di proses secepatnya oleh petugas administrasi desa goras jaya`
 
     await session.get(VAR).sendMessage(`${whatsapp}@s.whatsapp.net`, {text : confirmationMsg});
-
-    res.json({
-        success: true,
-        data: `Halo ${name}, NIK ${nik}, No. ${whatsapp}`,
-        messsage: 'Sukses'
-    })
-
 }
 
 const getStatus = async (req, res) => {
@@ -66,11 +57,9 @@ const getStatus = async (req, res) => {
     res.setHeader('Expires', '0');
 
     if (qrCode == null || qrCode === undefined) {
-        res.json({ 
-            success: true,
-            data : connectionStatus,
-            message: 'Connected'
-        })
+        let code = qr.image(qrCode, {type: 'png'})
+        res.setHeader('Content-Type', 'image/png')
+        code.pipe(res)
     } else {
         let code = qr.image(qrCode, {type: 'png'})
         res.setHeader('Content-Type', 'image/png')
@@ -97,9 +86,9 @@ async function connectToWhatsApp() {
         })
         sock.ev.on('creds.update', saveCreds)
         sock.ev.on('connection.update', (update) => {
-            const { connection, lastDisconnect } = update
+            const { connection, lastDisconnect, qr } = update || {};
     
-            if (update.qr) {
+            if (qr) {
                 qrCode = update.qr
             }
     
