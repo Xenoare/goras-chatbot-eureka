@@ -8,12 +8,16 @@ const app = express()
 
 app.use(express.json())
 
+app.get('/ping', (req, res) => {
+  res.status(200).send('Pong!');
+});
+
 app.get("/", async (req, res) => {
-  const hasNewQrCode = await getStatus();
+  const hasNewQrCode = getStatus();
   if (hasNewQrCode) {
-    res.redirect("/new-qr-code")
+    return res.redirect("/new-qr-code")
   } else {
-    res.json({ 
+    return res.status(200).json({ 
       success: true,
       message: 'Connected'
     })

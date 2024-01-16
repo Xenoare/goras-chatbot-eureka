@@ -48,7 +48,7 @@ const sendMessage = async (req, res) => {
 
     await session.get(VAR).sendMessage(`${whatsapp}@s.whatsapp.net`, {text : confirmationMsg});
 
-    res.json({
+    return res.status(200).json({
         success: true,
         data: `Halo ${name}, NIK ${nik}, No. ${whatsapp}`,
         messsage: 'Sukses'
@@ -58,7 +58,7 @@ const sendMessage = async (req, res) => {
 
 const generateQrCode = async (req, res) => {
     if (qrCode == null) {
-        return res.redirect('/')
+        return res.status(200).redirect('/')
     }
     res.setHeader('Cache-Control', 's-max-age=30, stale-while-revalidate');
     const htmlContent = `
@@ -75,7 +75,7 @@ const generateQrCode = async (req, res) => {
     // Set the content type to HTML
     res.setHeader('Content-Type', 'text/html');
     // Send the HTML content
-    res.send(htmlContent);
+    res.status(200).send(htmlContent);
 
 }
 
