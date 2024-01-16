@@ -60,7 +60,7 @@ const generateQrCode = async (req, res) => {
     if (qrCode == null) {
         return res.redirect('/')
     }
-    res.setHeader('Cache-Control', 'max-age=20');    
+    res.setHeader('Cache-Control', 's-max-age=30, stale-while-revalidate');
     const htmlContent = `
         <html>
             <head>
@@ -75,7 +75,7 @@ const generateQrCode = async (req, res) => {
     // Set the content type to HTML
     res.setHeader('Content-Type', 'text/html');
     // Send the HTML content
-    res.status(200).send(htmlContent);
+    res.send(htmlContent);
 
 }
 
